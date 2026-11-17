@@ -10,7 +10,7 @@
 # - the window (kiri --features window, against this machine's glibc, GTK
 #   and WebKitGTK) for this machine's own architecture, when
 #   libwebkit2gtk-4.1-dev is installed; it goes in the full kiri package
-# - kiri and kiri-lite as .deb and .rpm for each (packaging/linux/build.sh)
+# - kiri and kiri-lite as .deb, .rpm and AppImage for each (packaging/linux/build.sh)
 #
 #   scripts/ci/linux-build.sh
 #
@@ -47,5 +47,5 @@ for arch in x86_64 aarch64; do
   bash packaging/linux/build.sh "$bins/$arch" target/packages "$arch" "target/linux-cli-$arch" $w
 done
 cd target/packages
-sha256sum *.deb *.rpm > SHA256SUMS-linux
+sha256sum *.deb *.rpm *.AppImage 2>/dev/null > SHA256SUMS-linux
 cat SHA256SUMS-linux

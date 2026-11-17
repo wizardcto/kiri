@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Kiri
+GenericName=Containers
+Comment=Tiny, fast container runtime (engine)
+Exec=AppRun --help
+Icon=kiri
+Terminal=true
+Categories=Development;

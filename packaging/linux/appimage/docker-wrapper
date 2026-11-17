@@ -1,0 +1,18 @@
+#!/bin/sh
+# Kiri's `docker` in the AppImage: the bundled CLI, defaulting to Kiri's socket
+# unless DOCKER_HOST or a docker context says otherwise. Plugin search uses the
+# copy inside the AppImage (DOCKER_CLI_PLUGIN_EXTRA_DIRS is set in AppRun).
+root=${APPDIR:-}
+[ -z "$root" ] && root=$(cd "$(dirname "$0")/../.." && pwd)
+if [ -z "${DOCKER_HOST:-}" ] && [ -z "${DOCKER_CONTEXT:-}" ]; then
+  cfg=${DOCKER_CONFIG:-$HOME/.docker}/config.json
+  if [ ! -f "$cfg" ] || ! grep -q '"currentContext"' "$cfg" 2>/dev/null; then
+    DOCKER_HOST=unix:///run/kiri/docker.sock
+    export DOCKER_HOST
+    if [ -z "${BUILDX_BUILDER:-}" ] && [ -f "${BUILDX_CONFIG:-${DOCKER_CONFIG:-$HOME/.docker}/buildx}/instances/kiri-build" ]; then
+      BUILDX_BUILDER=kiri-build
+      export BUILDX_BUILDER
+    fi
+  fi
+fi
+exec "$root/usr/libexec/kiri/bin/docker" "$@"
