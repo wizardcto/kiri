@@ -103,7 +103,7 @@ kiri UI ────┘
 | `tests/finder-mount.sh` | the Mac's Finder mount at `~/Kiri`: covers only an empty folder or its own old mount, never your files or another mount |
 | `contrib/` | systemd unit, WSL2 and Windows install scripts |
 | `installer/windows` | the Windows MSI (WiX 5): `kiri.wxs`, licence, dialog bitmaps |
-| `packaging/` | Linux `.deb` and `.rpm` (`kiri` with the docker CLI, `kiri-lite` engine only), the Homebrew plan |
+| `packaging/` | Linux `.deb`, `.rpm` and AppImage (`kiri` with the docker CLI, `kiri-lite` engine only), the Homebrew plan |
 | `xtask` | build tasks |
 | `bench/results.json` | measured results; the website keeps a copy |
 | `brand/` | brand (the website and raw benchmark output live outside this repository) |

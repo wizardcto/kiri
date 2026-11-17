@@ -98,6 +98,20 @@ test_package() { # name full(0|1)
 
 test_package kiri-lite 0
 ls "$out"/kiri_*.deb >/dev/null 2>&1 && test_package kiri 1
+
+echo
+echo "== AppImage (when present)"
+lite_app=$(ls "$out"/kiri-lite-*.AppImage 2>/dev/null | head -1)
+if [ -n "$lite_app" ]; then
+  check "AppImage lite runs (extract-and-run)" "APPIMAGE_EXTRACT_AND_RUN=1 '$lite_app' 2>&1 | head -1 | grep -q usage"
+  full_app=$(ls "$out"/kiri-[0-9]*.AppImage 2>/dev/null | head -1)
+  if [ -n "$full_app" ]; then
+    check "AppImage full docker --version" "APPIMAGE_EXTRACT_AND_RUN=1 '$full_app' docker --version | grep -q '^Docker version'"
+  fi
+else
+  echo "  [skip] no .AppImage in $out"
+fi
+
 echo
 echo "== $fail failed"
 exit $fail

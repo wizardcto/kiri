@@ -17,6 +17,8 @@
 #              and the window when one is given
 # Needs dpkg-deb (any Debian/Ubuntu, also in WSL) and rpmbuild (apt install rpm).
 # Either tool missing: those packages are skipped with a note.
+# AppImage (optional): curl; fetch-appimage-tools.sh downloads appimagetool (and
+# linuxdeploy when a window is bundled). See packaging/linux/appimage/README.md.
 set -euo pipefail
 # Directories in the packages are made here with mkdir -p and keep this
 # mask; a builder's stricter umask would otherwise ship 0750 /usr/bin.
@@ -60,6 +62,13 @@ stage_engine() { # root unitdir
   install -m 644 "$here/kiri.service" "$1/$2/kiri.service"
   # The password prompt for `kiri host-access` (the window's setup checklist).
   install -D -m 644 "$here/dev.kiri.host-access.policy" "$1/usr/share/polkit-1/actions/dev.kiri.host-access.policy"
+}
+stage_appimage_cli() { # root
+  mkdir -p "$1/usr/libexec/kiri/bin" "$1/usr/libexec/kiri/cli-plugins"
+  install -m 755 "$clidir/docker" "$1/usr/libexec/kiri/bin/docker"
+  install -m 755 "$here/appimage/docker-wrapper" "$1/usr/libexec/kiri/docker"
+  install -m 755 "$clidir/docker-compose" "$1/usr/libexec/kiri/cli-plugins/docker-compose"
+  install -m 755 "$clidir/docker-buildx" "$1/usr/libexec/kiri/cli-plugins/docker-buildx"
 }
 stage_cli() { # root
   # The plugins stay in Kiri's own directory: /usr/lib/docker/cli-plugins
@@ -187,6 +196,40 @@ build_rpm() { # name full(0|1)
   echo "$outdir/$(basename "$rpm")"
 }
 
+# ---- AppImage ----
+build_appimage() { # name full(0|1)
+  local name=$1 full=$2 appdir
+  appdir=$work/${name}.AppDir
+  rm -rf "$appdir"
+  mkdir -p "$appdir/usr/bin"
+  install -m 755 "$bindir/kiri" "$bindir/kiri-init" "$appdir/usr/bin/"
+  if [ "$full" = 1 ]; then
+    stage_appimage_cli "$appdir"
+    [ -n "$window" ] && stage_window "$appdir"
+  fi
+  install -m 755 "$here/appimage/AppRun" "$appdir/AppRun"
+  install -m 644 "$root/brand/icon/png/kiri-app-icon-256.png" "$appdir/kiri.png"
+  if [ "$full" = 1 ] && [ -n "$window" ]; then
+    install -m 644 "$here/appimage/kiri.desktop" "$appdir/kiri.desktop"
+    ln -sf ../lib/kiri/kiri-window "$appdir/usr/bin/kiri-window"
+  else
+    install -m 644 "$here/appimage/kiri-lite.desktop" "$appdir/kiri-lite.desktop"
+  fi
+  local cache=$HOME/.cache/kiri-appimage-tools
+  read -r appimagetool deploy <<<"$(bash "$here/fetch-appimage-tools.sh" "$cache" "$arch")"
+  if [ "$full" = 1 ] && [ -n "$window" ]; then
+  (
+    cd "$appdir"
+    APPIMAGE_EXTRACT_AND_RUN=1 "$deploy" --appdir "$appdir" \
+      -e usr/lib/kiri/kiri-window \
+      -d "$appdir/kiri.desktop" -i "$appdir/kiri.png"
+  )
+  fi
+  local out=$outdir/${name}-${version}-${arch}.AppImage
+  ARCH=$arch APPIMAGE_EXTRACT_AND_RUN=1 "$appimagetool" "$appdir" "$out"
+  echo "$out"
+}
+
 if command -v dpkg-deb >/dev/null; then
   build_deb kiri-lite 0
   [ -n "$clidir" ] && build_deb kiri 1
@@ -198,5 +241,11 @@ if command -v rpmbuild >/dev/null; then
   [ -n "$clidir" ] && build_rpm kiri 1
 else
   echo "rpmbuild not found: no .rpm (apt install rpm)" >&2
+fi
+if command -v curl >/dev/null; then
+  build_appimage kiri-lite 0
+  [ -n "$clidir" ] && build_appimage kiri 1
+else
+  echo "curl not found: no AppImage" >&2
 fi
 [ -n "$clidir" ] || echo "(no cli-dir given: only kiri-lite; run fetch-cli.sh and pass its directory for the full kiri package)" >&2

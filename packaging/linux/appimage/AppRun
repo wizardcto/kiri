@@ -1,0 +1,21 @@
+#!/bin/sh
+# Portable entry for the Kiri AppImage (engine, CLI and optional window).
+HERE=$(dirname "$(readlink -f "$0")")
+export APPDIR=$HERE
+export PATH="$HERE/usr/libexec/kiri:$HERE/usr/libexec/kiri/bin:$HERE/usr/lib/kiri:$HERE/usr/bin:$PATH"
+export DOCKER_CLI_PLUGIN_EXTRA_DIRS="$HERE/usr/libexec/kiri/cli-plugins"
+case "${1:-}" in
+  ui)
+    if [ -x "$HERE/usr/lib/kiri/kiri-window" ]; then
+      shift
+      exec "$HERE/usr/lib/kiri/kiri-window" ui "$@"
+    fi
+    ;;
+  docker)
+    if [ -x "$HERE/usr/libexec/kiri/docker" ]; then
+      shift
+      exec "$HERE/usr/libexec/kiri/docker" "$@"
+    fi
+    ;;
+esac
+exec "$HERE/usr/bin/kiri" "$@"

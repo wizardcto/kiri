@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Kiri
+GenericName=Containers
+Comment=Run and share containers
+Exec=AppRun ui
+Icon=kiri
+Terminal=false
+Categories=Development;
+Keywords=docker;containers;kubernetes;
+StartupWMClass=kiri
